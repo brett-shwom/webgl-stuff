@@ -1,0 +1,194 @@
+<head>
+
+</head>
+<body>
+
+<script src='three.js'></script>
+<script src='TrackballControls.js'></script>
+<script >
+
+    var scene, camera, renderer;
+    var geometry, material, mesh;
+    var controls
+
+    init();
+    animate();
+
+    function box(scene, x, y, width, height, depth, color) {
+        var geometry = new THREE.BoxGeometry(width, height, depth);
+        //var material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: false } );
+        var material = new THREE.MeshLambertMaterial({
+            ambient: 0xffffff
+        })
+        var mesh = new THREE.Mesh(geometry, material);
+
+        mesh.material.color.setHex(color);
+
+        mesh.position = new THREE.Vector3(x * width, y * height, depth / 2);
+
+        scene.add(mesh);
+
+        return mesh
+    }
+
+    function init() {
+
+
+
+        scene = new THREE.Scene();
+        //scene.fog=new THREE.Fog( 0x021212, 0.015, 100 );
+        //scene.add(new THREE.AmbientLight(0x212223));
+
+        var directionalLight = new THREE.PointLight(0xFFFFFF);
+        directionalLight.position.set(0, 200, 2000 + 1)
+            //directionalLight.onlyShadow = true
+        directionalLight.shadowCameraVisible = true
+        directionalLight.shadowCameraNear = 1;
+        scene.add(directionalLight);
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 50000);
+        camera.position.z = 8000;
+        camera.position.x = 2000;
+        //camera.position.y = 2000
+
+
+
+        //create boxes with height 1
+
+        var rows = 70
+        var cols = 70
+
+        //compute box heights
+
+        var boxHeights = []
+
+        function heightToColor(height) {
+            if (height > 900) {
+                return 0xB4CDCD
+            }
+            if (height > 500) {
+                return 0xff0000
+            }
+            if (height > 20) {
+                return 0xffff00
+            }
+
+            return 0x8DEEEE
+
+        }
+
+        //assign random heights to all boxes
+
+        for (i = 0; i < rows; i++) {
+            boxHeights.push([])
+            for (j = 0; j < cols; j++) {
+                boxHeights[boxHeights.length-1].push(Math.random() * 1000 + 1)
+            }
+        }
+
+
+        //create a few rectangular groups of boxes and set their heights to be equal
+
+
+        groupWidth = 20
+        groupHeight = 2
+
+        numberOfGroups = 80
+
+
+        for(k=0;k<numberOfGroups;k++){
+            randomRow = Math.floor(Math.random() * boxHeights.length)
+            randomCol = Math.floor(Math.random() * boxHeights[randomRow].length)
+            randomHeight = Math.random() * 1000 + 1
+
+            try {
+
+                for(i=0;i<groupWidth;i++) {
+                    for(j=0;j<groupHeight;j++) {
+                        boxHeights[randomRow + i][randomCol + j] = randomHeight
+                    }
+                }
+            }
+            catch (e){}
+
+        }
+
+
+        boxes = []
+
+        for (i = 0; i < rows; i++) {
+            boxes.push([])
+            for (j = 0; j < cols; j++) {
+                box_mesh = box(scene, i, j, 200, 200, boxHeights[i][j], heightToColor(boxHeights[i][j]))
+                boxes[boxes.length - 1].push(box_mesh)
+            }
+        }
+
+
+
+
+        renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xffffff, 1);
+        controls = new THREE.TrackballControls(camera);
+
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+
+        controls.noZoom = false;
+        controls.noPan = false;
+
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
+
+        controls.keys = [65, 83, 68];
+
+        controls.addEventListener('change', render);
+
+        // camera.rotation.x = 1.5
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    function render() {
+
+        renderer.render(scene, camera);
+
+    }
+
+    function animate() {
+
+        // note: three.js includes requestAnimationFrame shim
+        requestAnimationFrame(animate);
+
+
+        //console.log(boxes[Math.floor(Math.random(boxes.length))])
+
+        // randomRow = Math.floor(Math.random() * boxes.length)
+        // randomCol = Math.floor(Math.random() * boxes[randomRow].length)
+
+        // boxes[0][0].position.set(boxes[0][0].position.x,boxes[0][0].position.y,boxes[0][0].position.z+10)
+
+       // console.log(boxes[randomRow][randomCol].position.z)
+
+        //camera.position.y += 0.1;
+        //camera.rotation.x +=0.0001
+
+        controls.update()
+
+        renderer.render(scene, camera);
+
+    }
+
+    document.addEventListener('scroll', function () {
+        console.log('scrolling')
+    })
+
+
+</script>
+</body>
