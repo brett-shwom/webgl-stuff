@@ -5,32 +5,122 @@
 
 <script src='three.js'></script>
 <script src='TrackballControls.js'></script>
+<script src='chance.js'></script>
+<script src='micropromise.js'></script>
 <script >
+
+
+    Math.random = function () {
+        var val =  chance.normal({mean: 0.01, dev: 0.01})
+        if (val < 0) return 0
+        if (val > 1) return 0.9999999
+
+        return val
+    }
+
+
 
     var scene, camera, renderer;
     var geometry, material, mesh;
     var controls
 
-    init();
-    animate();
+    var rows = 120
+    var cols = 120
 
-    function box(scene, x, y, width, height, depth, color) {
+    var imageGrid;
+
+    imageToGrid('_DSC7777.jpg',rows,cols)
+        .then(function (_imageGrid) {
+            imageGrid = _imageGrid
+            init();
+            animate();
+        })
+
+
+
+    function box(scene, x, y, width, height, depth, color, totalX, totalY) {
         var geometry = new THREE.BoxGeometry(width, height, depth);
         //var material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: false } );
         var material = new THREE.MeshLambertMaterial({
             ambient: 0xffffff,
-            map: THREE.ImageUtils.loadTexture('crate.jpg')
+            map: THREE.ImageUtils.loadTexture(imageGrid[x][y])
         })
         var mesh = new THREE.Mesh(geometry, material);
 
-        mesh.material.color.setHex(color);
+        //mesh.material.color.setHex(color);
 
-        mesh.position = new THREE.Vector3(x * width, y * height, depth / 2);
+        //mesh.material.transparent = (Math.floor((Math.random())) == 0)
+        //mesh.material.opacity = 0.8
+
+        mesh.position = new THREE.Vector3(x * width - (totalX*width / 2), y * height - (totalY*width/2), depth / 2);
 
         scene.add(mesh);
 
         return mesh
     }
+
+    function imageToGrid(url,rows,cols) { //what to do if the aspect ratio of the image is different from that of rows x cols?
+
+        var imageToGridPromise = new Promise
+
+        console.log('started splitting image')
+
+        var canvas = document.createElement('canvas');
+
+        var context = canvas.getContext('2d');
+
+        var imageLoaded = new Promise
+
+        var imageObj = new Image()
+        imageObj.onload = function() {
+          imageLoaded.resolve(this)
+        }
+
+        imageObj.src = url
+
+        var grid = []
+
+        imageLoaded.then(function (img) {
+
+            console.log('image loaded')
+
+            canvas.width = (img.width / cols)
+            canvas.height = (img.height / rows)
+
+
+            for( var j = 0; j<cols;j++) {
+                grid.push([])
+                for(var i = rows-1; i>=0; i--) {
+                    var sourceX = (img.width / cols) * j ;
+                    var sourceY = (img.height / rows) * i ;
+                    var sourceWidth = (img.width / cols);
+                    var sourceHeight = (img.height / rows);
+                    var destX = 0;
+                    var destY = 0;
+                    var destWidth = sourceWidth;
+                    var destHeight = sourceHeight;
+
+                    context.drawImage(imageObj, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight)
+
+
+                    grid[grid.length-1].push(canvas.toDataURL())
+
+                }
+            }
+
+            console.log(grid)
+
+            imageToGridPromise.resolve(grid)
+
+        })
+
+
+        return imageToGridPromise
+
+
+    }
+
+
 
     function init() {
 
@@ -47,7 +137,7 @@
         directionalLight.shadowCameraNear = 1;
         scene.add(directionalLight);
 
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 50000);
+        camera = new THREE.PerspectiveCamera(15, window.innerWidth / window.innerHeight, 1, 50000);
         camera.position.z = 8000;
         camera.position.x = 2000;
         //camera.position.y = 2000
@@ -56,8 +146,7 @@
 
         //create boxes with height 1
 
-        var rows = 10
-        var cols = 10
+
 
         //compute box heights
 
@@ -84,6 +173,7 @@
             boxHeights.push([])
             for (j = 0; j < cols; j++) {
                 boxHeights[boxHeights.length-1].push(Math.random() * 1000 + 1)
+                //boxHeights[boxHeights.length-1].push(1)
             }
         }
 
@@ -120,7 +210,7 @@
         for (i = 0; i < rows; i++) {
             boxes.push([])
             for (j = 0; j < cols; j++) {
-                box_mesh = box(scene, i, j, 200, 200, boxHeights[i][j], heightToColor(boxHeights[i][j]))
+                box_mesh = box(scene, i, j, 20, 20, boxHeights[i][j], heightToColor(boxHeights[i][j]), rows,cols)
                 boxes[boxes.length - 1].push(box_mesh)
             }
         }
@@ -186,9 +276,7 @@
 
     }
 
-    document.addEventListener('scroll', function () {
-        console.log('scrolling')
-    })
+
 
 
 </script>
