@@ -24,17 +24,21 @@
     var geometry, material, mesh;
     var controls
 
-    var rows = 120
-    var cols = 120
+    var rows = 20
+    var cols = 20
 
     var imageGrid;
 
-    imageToGrid('_DSC7777.jpg',rows,cols)
+    imageToGrid('_DSC7771.jpg',rows,cols)
         .then(function (_imageGrid) {
             imageGrid = _imageGrid
             init();
             animate();
         })
+
+
+    // init();
+    // animate();
 
 
 
@@ -52,7 +56,14 @@
         //mesh.material.transparent = (Math.floor((Math.random())) == 0)
         //mesh.material.opacity = 0.8
 
-        mesh.position = new THREE.Vector3(x * width - (totalX*width / 2), y * height - (totalY*width/2), depth / 2);
+        var z = 150 * (Math.sin((x/10)) * Math.cos(y/10)) + depth / 2
+
+        //console.log('z',z)
+
+        mesh.position = new THREE.Vector3(x * width - (totalX*width / 2), y * height - (totalY*width/2), z);
+        mesh.__x = x
+        mesh.__y = y
+        mesh.__depth = depth
 
         scene.add(mesh);
 
@@ -172,8 +183,8 @@
         for (i = 0; i < rows; i++) {
             boxHeights.push([])
             for (j = 0; j < cols; j++) {
-                boxHeights[boxHeights.length-1].push(Math.random() * 1000 + 1)
-                //boxHeights[boxHeights.length-1].push(1)
+                //boxHeights[boxHeights.length-1].push(Math.random() * 1000 + 1)
+                boxHeights[boxHeights.length-1].push(1)
             }
         }
 
@@ -252,10 +263,22 @@
 
     }
 
+    var ttt = 0
+
     function animate() {
 
         // note: three.js includes requestAnimationFrame shim
         requestAnimationFrame(animate);
+        ttt++
+
+        var mesh
+
+        for(var i=0;i<rows;i++){
+            for(var j=0; j<cols;j++) {
+                mesh = boxes[i][j]
+                mesh.position.z = 150 * (Math.sin(((ttt+mesh.__x)/10)) * Math.cos((ttt+mesh.__y)/10)) + mesh.__depth / 2
+            }
+        }
 
 
         //console.log(boxes[Math.floor(Math.random(boxes.length))])
